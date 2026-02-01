@@ -1,15 +1,20 @@
-package main.java.com.example;
+package com.example;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class App {
 
-    public static void main(String[] args) throws Exception {
+    private static final Logger logger = LoggerFactory.getLogger(App.class);
+
+    public static void main(String[] args) {
 
         Calculator calc = new Calculator();
 
-        System.out.println(calc.calculate(10, 5, "add"));
+        int result = calc.calculate(10, 5, "add");
+        logger.info("Calculation result: {}", result);
 
         UserService service = new UserService();
         service.findUser("admin");
     }
 }
-
