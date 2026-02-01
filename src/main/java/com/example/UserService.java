@@ -1,31 +1,47 @@
-package main.java.com.example;
+package com.example;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.sql.Statement;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class UserService {
 
-    // SECURITY ISSUE: Hardcoded credentials
-    private String password = "admin123";
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    // VULNERABILITY: SQL Injection
-    public void findUser(String username) throws Exception {
+    // Use environment variables for credentials
+    private String dbUser = System.getenv("DB_USER");
+    private String dbPassword = System.getenv("DB_PASSWORD");
 
-        Connection conn =
-            DriverManager.getConnection("jdbc:mysql://localhost/db",
-                    "root", password);
+    // Use PreparedStatement to prevent SQL Injection
+    public void findUser(String username) throws SQLException {
 
-        Statement st = conn.createStatement();
+        // Explicitly list columns instead of SELECT *
+        String query = "SELECT id, name, email, phone FROM users WHERE name = ?";
 
-        String query =
-            "SELECT * FROM users WHERE name = '" + username + "'";
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/db", dbUser, dbPassword);
+             PreparedStatement st = conn.prepareStatement(query)) {
 
-        st.executeQuery(query);
-    }
+            st.setString(1, username);
 
-    // SMELL: Unused method
-    public void notUsed() {
-        System.out.println("I am never called");
+            try (ResultSet rs = st.executeQuery()) {
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    String name = rs.getString("name");
+                    String email = rs.getString("email");
+                    String phone = rs.getString("phone");
+
+                    logger.info("Found user: id={}, name={}, email={}, phone={}", id, name, email, phone);
+                }
+            }
+
+        } catch (SQLException e) {
+            logger.error("Error finding user: {}", username, e);
+            throw e; // propagate specific exception
+        }
     }
 }
